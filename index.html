@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Model Access Viewer:Check which models your API token can access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f7;
+      color: #222;
+    }
+    .card {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      color: #555;
+    }
+    .field label {
+      margin-bottom: 4px;
+    }
+    select, input {
+      min-width: 220px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #d0d0d5;
+      font-size: 14px;
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+    button {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+      min-height: 18px;
+    }
+    .status.error {
+      color: #b91c1c;
+    }
+    .status.success {
+      color: #15803d;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+    thead {
+      background: #f3f4f6;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    th:nth-child(1) { width: 80px; }
+    th:nth-child(2) { width: 26%; }
+    th:nth-child(3) { width: 22%; }
+    th:nth-child(4) { width: 18%; }
+    th:nth-child(5) { width: auto; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .cell-ellipsis {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .raw {
+      font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-size: 11px;
+      max-width: 380px;
+      overflow: hidden;
+      color: #4b5563;
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .footer-tip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #888;
+    }
+
+    .curl-section {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #444;
+    }
+    .curl-section h3 {
+      margin-bottom: 6px;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+    }
+    .curl-block {
+      position: relative;
+      background: #f3f4f6;
+      padding: 10px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .github-link {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #2563eb;
+    }
+    .github-link a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    @media (max-width: 640px) {
+      .card { padding: 16px; }
+      select, input { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 6px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Model Access Viewer</h1>
+    <p class="subtitle">Check which models your API token can access.</p>
+    <div class="controls">
+      <div class="field">
+        <label for="provider">Provider</label>
+        <select id="provider">
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Gemini (Google)</option>
+          <option value="xai">Grok (x.ai)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="token">API Token</label>
+        <input id="token" type="password" placeholder="Paste your API token here" />
+      </div>
+
+      <div class="field" style="margin-top: 18px;">
+        <button id="loadBtn">Load Models</button>
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="tableContainer"></div>
+
+    <div class="footer-tip">
+      ⚠️ Your API token is never stored or transmitted anywhere else — it only exists in the memory of this page.<br />
+      Some provider APIs block direct browser requests (CORS). Errors will be shown above.
+    </div>
+    <div class="curl-section">
+      <h3>Alternatively, you can also check model access from your terminal:</h3>
+      <strong>OpenAI</strong>
+      <div class="curl-block" data-curl="curl https://api.openai.com/v1/models -H 'Authorization: Bearer your_api_token'">
+curl https://api.openai.com/v1/models \
+  -H "Authorization: Bearer your_api_token"
+      </div>
+
+      <strong>Google Gemini</strong>
+      <div class="curl-block" data-curl="curl https://generativelanguage.googleapis.com/v1beta/models -H 'x-goog-api-key: your_api_token'">
+curl "https://generativelanguage.googleapis.com/v1beta/models" \
+  -H "x-goog-api-key: your_api_token"
+      </div>
+
+      <strong>xAI Grok</strong>
+      <div class="curl-block" data-curl="curl https://api.x.ai/v1/models -H 'Authorization: Bearer your_api_token'">
+curl https://api.x.ai/v1/models \
+  -H "Authorization: Bearer your_api_token"
+      </div>
+    </div>
+
+    <div class="github-link">
+      Source code available on GitHub — 
+      <a href="https://github.com/huabin/modelaccessviewer" target="_blank" rel="noopener noreferrer">
+        Open repository
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const providerSelect = document.getElementById("provider");
+    const tokenInput = document.getElementById("token");
+    const loadBtn = document.getElementById("loadBtn");
+    const statusEl = document.getElementById("status");
+    const tableContainer = document.getElementById("tableContainer");
+
+    function escapeAttr(str) {
+      return (str || "").replace(/"/g, '&quot;');
+    }
+
+    const providerConfigs = {
+      openai: {
+        name: "OpenAI",
+        buildRequest: (token) => ({
+          url: "https://api.openai.com/v1/models",
+          options: {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + token },
+          },
+        }),
+        normalize: (json) =>
+          (json.data || []).map(m => ({
+            provider: "OpenAI",
+            id: m.id,
+            type: m.object || "",
+            owner: m.owned_by || "",
+            extra: "Created: " + (m.created || ""),
+          })),
+      },
+
+      gemini: {
+        name: "Gemini",
+        buildRequest: (token) => ({
+          url: "https://generativelanguage.googleapis.com/v1beta/models",
+          options: {
+            method: "GET",
+            headers: { "x-goog-api-key": token },
+          },
+        }),
+        normalize: (json) =>
+          (json.models || []).map(m => {
+            const methods = m.supportedGenerationMethods || [];
+            const fullType = methods.join(", ");
+            const typeSummary = methods.slice(0, 2).join(", ");
+            const more = methods.length > 2 ? "" : "";
+
+            return {
+              provider: "Gemini",
+              id: m.name || "",
+              type: fullType,           // full string for tooltip
+              typeShort: typeSummary + more,
+              owner: m.displayName || "",
+              extra: m.description || "",
+            };
+          }),
+      },
+
+      xai: {
+        name: "Grok (x.ai)",
+        buildRequest: (token) => ({
+          url: "https://api.x.ai/v1/models",
+          options: {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + token },
+          },
+        }),
+        normalize: (json) =>
+          (json.data || json.models || []).map(m => ({
+            provider: "Grok",
+            id: m.id || m.name || "",
+            type: m.type || m.object || "",
+            owner: m.owned_by || "",
+            extra: "",
+          })),
+      },
+    };
+
+    function setStatus(text, type) {
+      statusEl.textContent = text || "";
+      statusEl.className = "status" + (type ? " " + type : "");
+    }
+
+    function renderTable(rows) {
+      if (!rows || rows.length === 0) {
+        tableContainer.innerHTML =
+          "<div style='margin-top:10px;font-size:13px;color:#666;'>No models found.</div>";
+        return;
+      }
+
+      const header = `
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Model ID / Name</th>
+            <th>Type</th>
+            <th>Owner</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+      `;
+
+      const body = rows.map(r => {
+        const displayType = r.typeShort || r.type || "";
+        const fullType = r.type || "";
+
+        return `
+        <tr>
+          <td><span class="tag">${r.provider}</span></td>
+
+          <td>
+            <div class="cell-ellipsis" title="${escapeAttr(r.id)}">
+              ${r.id}
+            </div>
+          </td>
+
+          <td>
+            <div class="cell-ellipsis" title="${escapeAttr(fullType)}">
+              ${displayType}
+            </div>
+          </td>
+
+          <td>
+            <div class="cell-ellipsis" title="${escapeAttr(r.owner)}">
+              ${r.owner}
+            </div>
+          </td>
+
+          <td>
+            <div class="raw" title="${escapeAttr(r.extra)}">
+              ${r.extra}
+            </div>
+          </td>
+        </tr>
+      `;
+      }).join("");
+
+      tableContainer.innerHTML = `
+        <table>
+          ${header}
+          <tbody>${body}</tbody>
+        </table>
+      `;
+    }
+
+    async function loadModels() {
+      const provider = providerSelect.value;
+      const token = tokenInput.value.trim();
+
+      if (!token) {
+        setStatus("Please enter an API token.", "error");
+        return;
+      }
+
+      const cfg = providerConfigs[provider];
+      const { url, options } = cfg.buildRequest(token);
+
+      loadBtn.disabled = true;
+      setStatus(`Fetching model list from ${cfg.name}…`);
+
+      try {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let json;
+
+        try { json = JSON.parse(text); }
+        catch { throw new Error("Response is not valid JSON:\n" + text.slice(0, 200)); }
+
+        if (!res.ok) {
+          setStatus(`Request failed (${res.status}): ${json.error?.message || json.message || "Check your token or CORS issues."}`, "error");
+          tableContainer.innerHTML = "";
+          return;
+        }
+
+        const rows = cfg.normalize(json);
+        renderTable(rows);
+
+        setStatus(`Successfully loaded ${rows.length} models from ${cfg.name}.`, "success");
+      } catch (err) {
+        setStatus("Request error: " + err.message, "error");
+        tableContainer.innerHTML = "";
+      } finally {
+        loadBtn.disabled = false;
+      }
+    }
+
+    loadBtn.addEventListener("click", loadModels);
+  </script>
+</body>
+</html>
