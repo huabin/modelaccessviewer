@@ -10,7 +10,7 @@ A lightweight, client-side tool that lets you quickly check which models your AP
 ## How to Use
 
 ### **Option 1 — Use Online Version**
-Simply open the hosted version: [modelaccessviewer.binhua.org](https://modelaccessviewer.binhua.org)
+Simply open the hosted version: [modelaccessviewer.binhua.org](https://modelaccessviewer.binhua.org) or [mav.binhua.org](https://mav.binhua.org)
 
 ### **Option 2 — Run Locally**
 1. Download `index.html`
